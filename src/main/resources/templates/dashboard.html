@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPI Offline Mesh — Demo</title>
+<style>
+:root {
+  --bg:        #0a0e1a;
+  --surface:   #111827;
+  --surface2:  #1a2235;
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.14);
+  --text:      #e8edf5;
+  --muted:     #6b7b99;
+  --accent:    #6366f1;
+  --accent2:   #818cf8;
+  --green:     #22c55e;
+  --green-bg:  rgba(34,197,94,0.12);
+  --amber:     #f59e0b;
+  --amber-bg:  rgba(245,158,11,0.12);
+  --red:       #ef4444;
+  --red-bg:    rgba(239,68,68,0.12);
+  --blue:      #3b82f6;
+  --blue-bg:   rgba(59,130,246,0.12);
+  --mono:      'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --radius:    10px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Layout ── */
+.shell { max-width: 1280px; margin: 0 auto; padding: 24px 20px 60px; }
+
+/* ── Header ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 32px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+.header p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--green-bg); border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 11px; font-weight: 600; color: var(--green);
+}
+
+/* ── Security badge strip ── */
+.security-strip {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.sec-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 11px; color: var(--muted);
+}
+.sec-badge span { color: var(--accent2); font-size: 13px; }
+
+/* ── Stats row ── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px 20px;
+  transition: border-color .2s;
+}
+.stat-card:hover { border-color: var(--border2); }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+              letter-spacing: 0.5px; margin-bottom: 6px; }
+.stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.stat-value.green  { color: var(--green); }
+.stat-value.amber  { color: var(--amber); }
+.stat-value.accent { color: var(--accent2); }
+.stat-value.red    { color: var(--red); }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── Two-column layout ── */
+.main-grid { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+}
+.card-title {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.2px;
+  margin-bottom: 16px; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .icon { font-size: 16px; }
+
+/* ── Demo control panel ── */
+.demo-panel { display: flex; flex-direction: column; gap: 16px; }
+
+.step-block {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  transition: border-color .2s;
+}
+.step-block.active  { border-color: var(--accent); }
+.step-block.done    { border-color: rgba(34,197,94,0.4); }
+
+.step-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.step-num.done { background: var(--green); }
+.step-title { font-size: 13px; font-weight: 600; }
+.step-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Form elements ── */
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 100px; }
+.form-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+select, input[type=text], input[type=number] {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border2); border-radius: 8px;
+  padding: 8px 10px; font-size: 13px; width: 100%;
+  transition: border-color .15s;
+  -webkit-appearance: none;
+}
+select:focus, input:focus { outline: none; border-color: var(--accent); }
+select { cursor: pointer; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .15s; white-space: nowrap; user-select: none;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary   { background: var(--accent); color: white; }
+.btn-primary:hover:not(:disabled) { background: #5254cc; transform: translateY(-1px); }
+.btn-success   { background: var(--green); color: #052e16; }
+.btn-success:hover:not(:disabled) { background: #16a34a; }
+.btn-outline   { background: transparent; color: var(--text); border: 1px solid var(--border2); }
+.btn-outline:hover:not(:disabled) { background: var(--surface2); border-color: var(--accent); }
+.btn-danger    { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.btn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.2); }
+.btn-full { width: 100%; margin-top: 8px; padding: 10px; font-size: 14px; }
+
+.btn-demo {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white; width: 100%; padding: 12px; font-size: 15px;
+  border-radius: var(--radius); border: none; cursor: pointer;
+  font-weight: 700; letter-spacing: 0.3px;
+  transition: all .2s; position: relative; overflow: hidden;
+}
+.btn-demo:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+.btn-demo:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-demo .spinner {
+  display: none; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+.btn-demo.loading .spinner { display: inline-block; }
+.btn-demo.loading .btn-text { opacity: 0; position: absolute; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Progress steps ── */
+.demo-progress {
+  display: flex; align-items: center; gap: 0; margin: 16px 0 8px;
+}
+.prog-step {
+  flex: 1; text-align: center;
+  font-size: 10px; color: var(--muted);
+  position: relative; padding: 0 4px;
+}
+.prog-step::after {
+  content: ''; position: absolute; top: 7px; left: 50%;
+  width: 100%; height: 2px; background: var(--border2);
+}
+.prog-step:last-child::after { display: none; }
+.prog-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--surface2); border: 2px solid var(--border2);
+  margin: 0 auto 4px; position: relative; z-index: 1;
+  transition: all .3s;
+}
+.prog-step.active .prog-dot  { border-color: var(--accent); background: var(--accent); }
+.prog-step.done   .prog-dot  { border-color: var(--green);  background: var(--green); }
+.prog-step.active .prog-step-label,
+.prog-step.done   .prog-step-label  { color: var(--text); }
+.prog-step-label { font-size: 9px; }
+
+/* ── Mesh devices ── */
+.device-list { display: flex; flex-direction: column; gap: 8px; }
+.device-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px;
+  transition: border-color .2s;
+}
+.device-item.bridge { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.04); }
+.device-icon { font-size: 18px; flex-shrink: 0; }
+.device-info { flex: 1; min-width: 0; }
+.device-name { font-size: 12px; font-weight: 600; }
+.device-sub  { font-size: 10px; color: var(--muted); }
+.device-count {
+  font-size: 18px; font-weight: 700;
+  color: var(--accent2); min-width: 24px; text-align: right;
+}
+.device-count.has-packets { color: var(--amber); }
+.conn-pill {
+  font-size: 9px; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; letter-spacing: 0.3px;
+}
+.conn-online  { background: var(--green-bg); color: var(--green); }
+.conn-offline { background: var(--surface);  color: var(--muted); border: 1px solid var(--border); }
+
+/* ── Packet chips ── */
+.packet-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.packet-chip {
+  font-family: var(--mono); font-size: 9px; padding: 1px 6px;
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 4px; color: var(--accent2);
+}
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  text-align: left; padding: 8px 10px;
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border);
+}
+tbody td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+/* ── Status badges ── */
+.status-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+}
+.s-SETTLED           { background: var(--green-bg); color: var(--green); }
+.s-REJECTED          { background: var(--red-bg);   color: var(--red); }
+.s-INVALID           { background: var(--red-bg);   color: var(--red); }
+.s-DUPLICATE_DROPPED { background: var(--amber-bg); color: var(--amber); }
+
+/* ── Balance display ── */
+.balance { font-family: var(--mono); font-weight: 600; color: var(--green); }
+
+/* ── Account cards ── */
+.account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.account-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+}
+.account-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; margin-bottom: 8px;
+}
+.av-alice { background: rgba(99,102,241,0.2); color: var(--accent2); }
+.av-bob   { background: rgba(34,197,94,0.2);  color: var(--green); }
+.av-carol { background: rgba(245,158,11,0.2); color: var(--amber); }
+.av-dave  { background: rgba(239,68,68,0.2);  color: var(--red); }
+.account-name { font-size: 12px; font-weight: 600; }
+.account-vpa  { font-size: 10px; color: var(--muted); }
+.account-balance { font-size: 18px; font-weight: 700; color: var(--green); margin-top: 6px; }
+
+/* ── Log ── */
+.log-box {
+  background: #050810; border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; font-family: var(--mono);
+  font-size: 11px; color: #7ee787; max-height: 200px;
+  overflow-y: auto; white-space: pre-wrap; line-height: 1.7;
+}
+.log-box .log-time   { color: var(--muted); }
+.log-box .log-ok     { color: var(--green); }
+.log-box .log-warn   { color: var(--amber); }
+.log-box .log-err    { color: var(--red); }
+.log-box .log-info   { color: var(--accent2); }
+
+/* ── Activity feed (flush results) ── */
+.activity-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon { font-size: 16px; width: 28px; text-align: center; }
+.activity-content { flex: 1; }
+.activity-title { font-size: 12px; font-weight: 500; }
+.activity-sub   { font-size: 10px; color: var(--muted); }
+.activity-badge { font-size: 10px; font-weight: 700; }
+
+/* ── Toast ── */
+#toast-container {
+  position: fixed; bottom: 24px; right: 24px;
+  display: flex; flex-direction: column-reverse; gap: 8px;
+  z-index: 9999; pointer-events: none;
+}
+.toast {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 260px; max-width: 380px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  animation: slideIn .25s ease;
+  pointer-events: auto;
+}
+.toast.removing { animation: slideOut .25s ease forwards; }
+@keyframes slideIn  { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: none; } }
+@keyframes slideOut { to   { opacity:0; transform: translateX(40px); } }
+.toast-icon  { font-size: 18px; flex-shrink: 0; }
+.toast-msg   { font-size: 13px; font-weight: 500; flex: 1; }
+.toast.success { border-color: rgba(34,197,94,0.3); }
+.toast.error   { border-color: rgba(239,68,68,0.3); }
+.toast.info    { border-color: rgba(99,102,241,0.3); }
+
+/* ── Receipt Modal ── */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 28px; width: 380px; max-width: 95vw;
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn { from { opacity:0; transform: scale(0.95); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-title  { font-size: 16px; font-weight: 700; }
+.modal-close  { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; }
+.receipt-amount {
+  text-align: center; padding: 20px;
+  background: var(--green-bg); border-radius: 12px; margin-bottom: 20px;
+}
+.receipt-amount .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.receipt-amount .amount { font-size: 36px; font-weight: 800; color: var(--green); margin: 4px 0; }
+.receipt-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.receipt-row:last-child { border-bottom: none; }
+.receipt-key   { color: var(--muted); }
+.receipt-value { font-family: var(--mono); font-size: 11px; color: var(--text); text-align: right; max-width: 200px; word-break: break-all; }
+.receipt-hash  { font-size: 9px; }
+
+/* ── Skeleton loaders ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 32px 20px; color: var(--muted);
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+.empty-state p { font-size: 12px; }
+
+/* ── Right column layout ── */
+.right-col { display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .main-grid  { grid-template-columns: 1fr; }
+  .stats-row  { grid-template-columns: repeat(2,1fr); }
+  .account-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .stats-row  { grid-template-columns: 1fr 1fr; }
+  .form-row   { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Receipt modal -->
+<div class="modal-backdrop" id="receiptModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Transaction receipt</span>
+      <button class="modal-close" onclick="closeReceipt()">✕</button>
+    </div>
+    <div class="receipt-amount">
+      <div class="label">Amount settled</div>
+      <div class="amount" id="r-amount">₹0</div>
+      <div class="label" id="r-status-label">SETTLED</div>
+    </div>
+    <div id="r-rows"></div>
+    <button class="btn btn-outline btn-full" onclick="closeReceipt()" style="margin-top:16px">Close</button>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">📡</div>
+      <div>
+        <h1>UPI Offline Mesh</h1>
+        <p>Encrypted mesh-routed deferred settlement — zero connectivity required</p>
+      </div>
+    </div>
+    <div class="live-badge">
+      <div class="status-dot"></div>
+      LIVE DEMO
+    </div>
+  </header>
+
+  <!-- Security badges -->
+  <div class="security-strip">
+    <div class="sec-badge"><span>🔒</span> AES-256-GCM encrypted</div>
+    <div class="sec-badge"><span>🔑</span> RSA-2048 OAEP key transport</div>
+    <div class="sec-badge"><span>⚡</span> Atomic idempotent settlement</div>
+    <div class="sec-badge"><span>🛡</span> Replay-attack resistant</div>
+    <div class="sec-badge"><span>✅</span> Tamper-proof (GCM auth tag)</div>
+    <div class="sec-badge"><span>🔄</span> Optimistic + pessimistic locking</div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Settled</div>
+      <div class="stat-value green" id="stat-settled">0</div>
+      <div class="stat-sub">transactions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Duplicates dropped</div>
+      <div class="stat-value amber" id="stat-dupes">0</div>
+      <div class="stat-sub">idempotency wins</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Volume settled</div>
+      <div class="stat-value accent" id="stat-volume">₹0</div>
+      <div class="stat-sub">this session</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cache size</div>
+      <div class="stat-value" id="stat-cache">0</div>
+      <div class="stat-sub">hashes remembered</div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+
+    <!-- Left: controls -->
+    <div>
+      <div class="card">
+        <div class="card-title"><span class="icon">🎬</span>Demo console</div>
+        <div class="demo-panel">
+
+          <!-- One-click demo -->
+          <div>
+            <button class="btn-demo" id="runDemoBtn" onclick="runFullDemo()">
+              <span class="spinner"></span>
+              <span class="btn-text">▶ Run full demo</span>
+            </button>
+            <div class="demo-progress" id="demoProgress">
+              <div class="prog-step" id="ps-reset"><div class="prog-dot"></div><div class="prog-step-label">Reset</div></div>
+              <div class="prog-step" id="ps-inject"><div class="prog-dot"></div><div class="prog-step-label">Inject</div></div>
+              <div class="prog-step" id="ps-gossip"><div class="prog-dot"></div><div class="prog-step-label">Gossip</div></div>
+              <div class="prog-step" id="ps-flush"><div class="prog-dot"></div><div class="prog-step-label">Flush</div></div>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border)">
+
+          <!-- Step 1: compose -->
+          <div class="step-block" id="sb1">
+            <div class="step-header">
+              <div class="step-num">1</div>
+              <div><div class="step-title">Compose payment</div>
+                   <div class="step-sub">Simulates sender phone — encrypts locally</div></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <div class="form-label">Sender</div>
+                <select id="senderVpa">
+                  <option>alice@demo</option>
+                  <option>bob@demo</option>
+                  <option>carol@demo</option>
+                  <option>dave@demo</option>
+                </select>
+              </div>
+              <div style="align-self:flex-end;padding-bottom:8px;color:var(--muted)">→</div>
+              <div class="form-group">
+                <div class="form-label">Receiver</div>
+                <select id="receiverVpa">
+                  <option>bob@demo</option>
+                  <option>carol@demo</option>
+                  <option>alice@demo</option>
+                  <option>dave@demo</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row" style="margin-top:8px">
+              <div class="form-group">
+                <div class="form-label">Amount (₹)</div>
+                <input type="number" id="amount" value="500" min="1" max="10000">
+              </div>
+              <div class="form-group">
+                <div class="form-label">PIN</div>
+                <input type="text" id="pin" value="1234" maxlength="4" style="letter-spacing:4px">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <div class="form-label" style="display:flex;align-items:center;gap:6px">
+                🔑 API Key
+                <span style="font-size:10px;color:var(--muted);font-weight:400">(required for bridge/ingest and reset)</span>
+              </div>
+              <input type="password" id="apiKeyInput" value="demo-key"
+                     placeholder="Bearer token — set BRIDGE_API_KEY env var in production"
+                     style="font-family:var(--mono);font-size:12px">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="sendPacket()">📤 Encrypt &amp; inject into mesh</button>
+          </div>
+
+          <!-- Step 2: gossip -->
+          <div class="step-block" id="sb2">
+            <div class="step-header">
+              <div class="step-num">2</div>
+              <div><div class="step-title">Run gossip round</div>
+                   <div class="step-sub">Packets hop device-to-device, TTL decrements</div></div>
+            </div>
+            <button class="btn btn-outline btn-full" onclick="gossip()">🔄 Run gossip round</button>
+          </div>
+
+          <!-- Step 3: flush -->
+          <div class="step-block" id="sb3">
+            <div class="step-header">
+              <div class="step-num">3</div>
+              <div><div class="step-title">Bridge walks outside</div>
+                   <div class="step-sub">Gets 4G → uploads all packets in parallel</div></div>
+            </div>
+            <button class="btn btn-success btn-full" onclick="flushBridges()">📡 Bridges upload to backend</button>
+          </div>
+
+          <!-- Step 4: reset -->
+          <div class="step-block">
+            <div class="step-header">
+              <div class="step-num" style="background:var(--red)">↺</div>
+              <div><div class="step-title">Reset</div>
+                   <div class="step-sub">Clear mesh, cache, and restore balances</div></div>
+            </div>
+            <button class="btn btn-danger btn-full" onclick="fullReset()">🗑 Full reset</button>
+          </div>
+
+        </div><!-- demo-panel -->
+      </div><!-- card -->
+    </div><!-- left col -->
+
+    <!-- Right column -->
+    <div class="right-col">
+
+      <!-- Mesh devices + accounts side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+        <!-- Mesh devices -->
+        <div class="card">
+          <div class="card-title"><span class="icon">📱</span>Mesh devices</div>
+          <div class="device-list" id="deviceList">
+            <div class="skeleton" style="height:56px;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:56px;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:56px"></div>
+          </div>
+        </div>
+
+        <!-- Accounts -->
+        <div class="card">
+          <div class="card-title"><span class="icon">💰</span>Account balances</div>
+          <div class="account-grid" id="accountGrid">
+            <div class="skeleton" style="height:80px"></div>
+            <div class="skeleton" style="height:80px"></div>
+            <div class="skeleton" style="height:80px"></div>
+            <div class="skeleton" style="height:80px"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Activity / flush results -->
+      <div class="card">
+        <div class="card-title"><span class="icon">⚡</span>Last flush results</div>
+        <div id="activityFeed">
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <p>No flush results yet. Run a gossip + flush sequence.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction ledger -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📜</span>Transaction ledger</div>
+        <div class="table-wrap">
+          <table id="txTable">
+            <thead>
+              <tr>
+                <th>#</th><th>From</th><th>To</th><th>Amount</th>
+                <th>Status</th><th>Bridge</th><th>Hops</th><th>Time</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="txEmpty">
+          <div class="icon">🧾</div>
+          <p>No transactions yet. Inject a packet and run a flush.</p>
+        </div>
+      </div>
+
+      <!-- Activity log -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🪵</span>Activity log</div>
+        <div class="log-box" id="logBox">Waiting for activity…</div>
+      </div>
+
+      <!-- Audit summary -->
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><span class="icon">🔍</span>Audit summary</span>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="loadAudit()">↻ Refresh</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+          <div class="stat-card"><div class="stat-label">Settled</div><div class="stat-value green" id="aud-settled">—</div></div>
+          <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value" style="color:var(--amber)" id="aud-rejected">—</div></div>
+          <div class="stat-card"><div class="stat-label">Invalid</div><div class="stat-value" style="color:var(--red)" id="aud-invalid">—</div></div>
+          <div class="stat-card"><div class="stat-label">Idempotency cache</div><div class="stat-value" id="aud-cache">—</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);padding:4px 0">
+          All ingest attempts tracked via <code style="font-size:10px;background:var(--surface2);padding:1px 5px;border-radius:4px">/api/audit</code>
+          — settled, rejected, and invalid. Auto-refreshes every 5s.
+        </div>
+      </div>
+
+    </div><!-- right col -->
+  </div><!-- main grid -->
+</div><!-- shell -->
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let stats = { settled: 0, dupes: 0, volume: 0, rejected: 0 };
+
+// ─── Logging ─────────────────────────────────────────────────────────────────
+function log(msg, type='info') {
+  const box = document.getElementById('logBox');
+  const time = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  const cls  = { ok:'log-ok', warn:'log-warn', err:'log-err', info:'log-info' }[type] || 'log-info';
+  const line = document.createElement('div');
+  line.innerHTML = `<span class="log-time">[${time}]</span> <span class="${cls}">${escapeHtml(msg)}</span>`;
+  if (box.firstChild && box.firstChild.textContent === 'Waiting for activity…') box.innerHTML = '';
+  box.insertBefore(line, box.firstChild);
+}
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️', warn:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span class="toast-msg">${escapeHtml(msg)}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 250); }, 3500);
+}
+
+// ─── Receipt modal ───────────────────────────────────────────────────────────
+function showReceipt(tx) {
+  document.getElementById('r-amount').textContent = '₹' + parseFloat(tx.amount).toFixed(2);
+  document.getElementById('r-status-label').textContent = tx.status;
+  document.getElementById('r-status-label').style.color =
+      tx.status === 'SETTLED' ? 'var(--green)' : 'var(--red)';
+  const rows = [
+    ['From',      tx.senderVpa],
+    ['To',        tx.receiverVpa],
+    ['Bridge',    tx.bridgeNodeId],
+    ['Hops',      tx.hopCount],
+    ['Signed at', new Date(tx.signedAt).toLocaleString('en-IN')],
+    ['Settled at',new Date(tx.settledAt).toLocaleString('en-IN')],
+    ['Packet hash', `<span class="receipt-hash">${tx.packetHash}</span>`],
+  ];
+  if (tx.rejectionReason) rows.push(['Reason', tx.rejectionReason]);
+  document.getElementById('r-rows').innerHTML = rows.map(([k,v]) =>
+    `<div class="receipt-row"><span class="receipt-key">${k}</span>
+     <span class="receipt-value">${v}</span></div>`).join('');
+  document.getElementById('receiptModal').classList.add('open');
+}
+function closeReceipt() {
+  document.getElementById('receiptModal').classList.remove('open');
+}
+document.getElementById('receiptModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeReceipt();
+});
+
+// ─── Stats ───────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-settled').textContent = stats.settled;
+  document.getElementById('stat-dupes').textContent   = stats.dupes;
+  document.getElementById('stat-volume').textContent  = '₹' + stats.volume.toFixed(0);
+}
+
+// ─── Progress bar ────────────────────────────────────────────────────────────
+const progSteps = ['reset','inject','gossip','flush'];
+function setProg(step, state) {
+  const el = document.getElementById('ps-' + step);
+  if (!el) return;
+  el.className = 'prog-step ' + state;
+}
+function resetProg() {
+  progSteps.forEach(s => setProg(s, ''));
+}
+
+// ─── Avatar helpers ──────────────────────────────────────────────────────────
+const avatarClass = { 'alice@demo':'av-alice','bob@demo':'av-bob',
+                      'carol@demo':'av-carol','dave@demo':'av-dave' };
+const avatarInitial = { 'alice@demo':'A','bob@demo':'B','carol@demo':'C','dave@demo':'D' };
+
+// ─── API helpers ─────────────────────────────────────────────────────────────
+const PROTECTED = ['/api/bridge/ingest', '/api/demo/reset-full'];
+function getApiKey() {
+  return (document.getElementById('apiKeyInput') || {}).value || 'demo-key';
+}
+async function api(url, method='GET', body=null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (PROTECTED.some(p => url.endsWith(p))) {
+    headers['Authorization'] = 'Bearer ' + getApiKey();
+  }
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.hint || res.statusText);
+  return data;
+}
+
+// ─── Refresh ─────────────────────────────────────────────────────────────────
+async function refresh() {
+  try {
+    const [meshState, accs, txs] = await Promise.all([
+      api('/api/mesh/state'),
+      api('/api/accounts'),
+      api('/api/transactions'),
+    ]);
+
+    // Devices
+    const sorted = [...meshState.devices].sort((a,b) =>
+        (a.hasInternet ? 1 : 0) - (b.hasInternet ? 1 : 0));
+    document.getElementById('deviceList').innerHTML = sorted.map(d => `
+      <div class="device-item ${d.hasInternet ? 'bridge' : ''}">
+        <div class="device-icon">${d.hasInternet ? '🌐' : '📱'}</div>
+        <div class="device-info">
+          <div class="device-name">${d.deviceId}</div>
+          <div class="packet-chips">
+            ${d.packetIds.map(id => `<span class="packet-chip">${id}</span>`).join('')}
+          </div>
+        </div>
+        <span class="conn-pill ${d.hasInternet ? 'conn-online' : 'conn-offline'}">
+          ${d.hasInternet ? '4G' : 'BT'}
+        </span>
+        <div class="device-count ${d.packetCount > 0 ? 'has-packets' : ''}">${d.packetCount}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('stat-cache').textContent = meshState.idempotencyCacheSize;
+
+    // Accounts
+    document.getElementById('accountGrid').innerHTML = accs.map(a => {
+      const vpa = a.vpa; const key = vpa.split('@')[0];
+      return `<div class="account-card">
+        <div class="account-avatar ${avatarClass[vpa]||''}">${avatarInitial[vpa]||key[0].toUpperCase()}</div>
+        <div class="account-name">${a.holderName}</div>
+        <div class="account-vpa">${a.vpa}</div>
+        <div class="account-balance">₹${parseFloat(a.balance).toFixed(2)}</div>
+      </div>`;
+    }).join('');
+
+    // Transactions
+    const tbody = document.querySelector('#txTable tbody');
+    if (txs.length === 0) {
+      tbody.innerHTML = '';
+      document.getElementById('txEmpty').style.display = 'block';
+      document.getElementById('txTable').style.display = 'none';
+    } else {
+      document.getElementById('txEmpty').style.display = 'none';
+      document.getElementById('txTable').style.display = 'table';
+      tbody.innerHTML = txs.map(t => `
+        <tr style="cursor:pointer" onclick='showReceipt(${JSON.stringify(t)})'>
+          <td style="color:var(--muted)">#${t.id}</td>
+          <td>${t.senderVpa}</td>
+          <td>${t.receiverVpa}</td>
+          <td class="balance">₹${parseFloat(t.amount).toFixed(2)}</td>
+          <td><span class="status-pill s-${t.status}">${t.status}</span></td>
+          <td style="color:var(--muted);font-size:11px">${t.bridgeNodeId}</td>
+          <td style="color:var(--muted)">${t.hopCount}</td>
+          <td style="color:var(--muted);font-size:11px">${new Date(t.settledAt).toLocaleTimeString('en-IN')}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Recount stats from live data
+    stats.settled  = txs.filter(t => t.status === 'SETTLED').length;
+    stats.rejected = txs.filter(t => t.status === 'REJECTED').length;
+    stats.volume   = txs.filter(t => t.status === 'SETTLED')
+                        .reduce((s,t) => s + parseFloat(t.amount), 0);
+    updateStats();
+
+  } catch(e) {
+    // Silent — don't spam on background refresh failures
+  }
+}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+async function sendPacket() {
+  const body = {
+    senderVpa:   document.getElementById('senderVpa').value,
+    receiverVpa: document.getElementById('receiverVpa').value,
+    amount:      parseFloat(document.getElementById('amount').value),
+    pin:         document.getElementById('pin').value,
+    ttl: 5, startDevice: 'phone-alice'
+  };
+  try {
+    const r = await api('/api/demo/send', 'POST', body);
+    log(`📤 Packet ${r.packetId.substring(0,8)}… encrypted and injected at ${r.injectedAt} (TTL ${r.ttl})`, 'ok');
+    log(`   Ciphertext preview: ${r.ciphertextPreview}`, 'info');
+    toast('Packet injected into mesh', 'success');
+    refresh();
+  } catch(e) {
+    log(`❌ Send failed: ${e.message}`, 'err');
+    toast(e.message, 'error');
+  }
+}
+
+async function gossip() {
+  try {
+    const r = await api('/api/mesh/gossip', 'POST');
+    log(`🔄 Gossip round: ${r.transfers} transfer(s) — ${JSON.stringify(r.deviceCounts)}`, 'info');
+    toast(`Gossip: ${r.transfers} transfers`, 'info');
+    refresh();
+  } catch(e) {
+    log(`❌ Gossip failed: ${e.message}`, 'err');
+    toast(e.message, 'error');
+  }
+}
+
+async function flushBridges() {
+  try {
+    const r = await api('/api/mesh/flush', 'POST');
+    log(`📡 Flush: ${r.uploadsAttempted} upload(s)`, 'info');
+    renderActivity(r.results);
+    r.results.forEach(res => {
+      const icon = res.outcome === 'SETTLED' ? '✅' : res.outcome === 'DUPLICATE_DROPPED' ? '🔁' : '❌';
+      log(`${icon} ${res.bridgeNode} → ${res.outcome}${res.reason ? ' ('+res.reason+')' : ''}`,
+          res.outcome === 'SETTLED' ? 'ok' : res.outcome === 'DUPLICATE_DROPPED' ? 'warn' : 'err');
+      if (res.outcome === 'DUPLICATE_DROPPED') stats.dupes++;
+    });
+    updateStats();
+    const settled = r.results.filter(x => x.outcome === 'SETTLED').length;
+    const dupes   = r.results.filter(x => x.outcome === 'DUPLICATE_DROPPED').length;
+    if (settled) toast(`${settled} settled, ${dupes} duplicates dropped ✅`, 'success');
+    else if (dupes) toast(`${dupes} duplicates dropped — idempotency worked! 🔁`, 'warn');
+    refresh();
+  } catch(e) {
+    log(`❌ Flush failed: ${e.message}`, 'err');
+    toast(e.message, 'error');
+  }
+}
+
+function renderActivity(results) {
+  if (!results || results.length === 0) return;
+  const icons = { SETTLED:'✅', DUPLICATE_DROPPED:'🔁', INVALID:'❌', REJECTED:'⛔' };
+  const colors = { SETTLED:'var(--green)', DUPLICATE_DROPPED:'var(--amber)', INVALID:'var(--red)', REJECTED:'var(--red)' };
+  document.getElementById('activityFeed').innerHTML = results.map(r => `
+    <div class="activity-item">
+      <div class="activity-icon">${icons[r.outcome]||'❓'}</div>
+      <div class="activity-content">
+        <div class="activity-title">${r.bridgeNode} uploaded packet <code style="font-size:10px">${r.packetId}</code></div>
+        <div class="activity-sub">${r.reason || 'No issues'} ${r.transactionId > 0 ? '· tx #'+r.transactionId : ''}</div>
+      </div>
+      <span class="activity-badge" style="color:${colors[r.outcome]||'var(--muted)'}">${r.outcome}</span>
+    </div>
+  `).join('');
+}
+
+async function fullReset() {
+  try {
+    await api('/api/demo/reset-full', 'POST');
+    stats = { settled: 0, dupes: 0, volume: 0, rejected: 0 };
+    updateStats();
+    resetProg();
+    document.getElementById('activityFeed').innerHTML = `
+      <div class="empty-state"><div class="icon">📭</div>
+      <p>No flush results yet. Run a gossip + flush sequence.</p></div>`;
+    log('🗑 Full reset: mesh, idempotency cache, and balances restored', 'warn');
+    toast('Full reset complete', 'info');
+    refresh();
+  } catch(e) {
+    log(`❌ Reset failed: ${e.message}`, 'err');
+    toast(e.message, 'error');
+  }
+}
+
+// ─── One-click demo ───────────────────────────────────────────────────────────
+async function runFullDemo() {
+  const btn = document.getElementById('runDemoBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  resetProg();
+
+  const body = {
+    senderVpa:   document.getElementById('senderVpa').value,
+    receiverVpa: document.getElementById('receiverVpa').value,
+    amount:      parseFloat(document.getElementById('amount').value),
+    pin:         document.getElementById('pin').value,
+    ttl: 5, startDevice: 'phone-alice'
+  };
+
+  try {
+    // Reset
+    setProg('reset', 'active');
+    await new Promise(r => setTimeout(r, 400));
+    setProg('reset', 'done');
+
+    // Inject
+    setProg('inject', 'active');
+    await new Promise(r => setTimeout(r, 400));
+
+    const r = await api('/api/demo/run-full', 'POST', body);
+
+    setProg('inject', 'done');
+    log(`📤 Packet encrypted and injected (TTL 5)`, 'ok');
+
+    // Gossip
+    setProg('gossip', 'active');
+    await new Promise(r => setTimeout(r, 600));
+    setProg('gossip', 'done');
+    log(`🔄 Gossip ×2: round1=${r.gossipRound1} transfers, round2=${r.gossipRound2} transfers`, 'info');
+
+    // Flush
+    setProg('flush', 'active');
+    await new Promise(r => setTimeout(r, 400));
+    setProg('flush', 'done');
+
+    renderActivity(r.flushResults);
+    r.flushResults.forEach(res => {
+      if (res.outcome === 'DUPLICATE_DROPPED') stats.dupes++;
+      const icon = { SETTLED:'✅', DUPLICATE_DROPPED:'🔁', INVALID:'❌' }[res.outcome]||'?';
+      log(`${icon} ${res.bridgeNode} → ${res.outcome}`,
+          res.outcome === 'SETTLED' ? 'ok' : 'warn');
+    });
+    updateStats();
+
+    const settled = r.flushResults.filter(x => x.outcome === 'SETTLED').length;
+    const dupes   = r.flushResults.filter(x => x.outcome === 'DUPLICATE_DROPPED').length;
+
+    if (settled && dupes) {
+      toast(`Demo complete! ${settled} settled, ${dupes} duplicates blocked 🎉`, 'success');
+    } else if (settled) {
+      toast('Payment settled successfully 🎉', 'success');
+    }
+
+    refresh();
+
+  } catch(e) {
+    log(`❌ Demo failed: ${e.message}`, 'err');
+    toast('Demo failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+// ─── Audit ───────────────────────────────────────────────────────────────────
+async function loadAudit() {
+  try {
+    const r = await api('/api/audit');
+    document.getElementById('aud-settled').textContent  = r.summary.totalSettled;
+    document.getElementById('aud-rejected').textContent = r.summary.totalRejected;
+    document.getElementById('aud-invalid').textContent  = r.summary.totalInvalid;
+    document.getElementById('aud-cache').textContent    = r.summary.idempotencyCacheSize;
+  } catch(e) { /* silent on background refresh */ }
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+refresh();
+loadAudit();
+setInterval(refresh, 3000);
+setInterval(loadAudit, 5000);
+</script>
+</body>
+</html>
