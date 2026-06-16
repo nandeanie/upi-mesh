@@ -14,6 +14,7 @@ mvn spring-boot:run
 
 Opens at `http://localhost:8080` — uses H2 in-memory DB, no setup needed.
 
+
 ## How it works
 
 ```
