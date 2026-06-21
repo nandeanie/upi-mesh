@@ -6,6 +6,7 @@ Send money with no internet. Encrypted payment packets hop device-to-device over
 
 Java 17 · Spring Boot 3.3 · PostgreSQL · RSA-2048 + AES-256-GCM · JUnit 5
 
+
 ## Run locally
 
 ```bash
