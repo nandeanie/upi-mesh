@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UPI Mesh — Offline Payments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=7">
+</head>
+<body>
+<div class="app">
+
+<!-- ═════════ Sidebar ═════════ -->
+<aside>
+  <div class="brand">
+    <div class="brand-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.5 4.5a10.6 10.6 0 0 0 0 15M19.5 4.5a10.6 10.6 0 0 1 0 15"/></svg></div>
+    <div>UPI Mesh<small>Offline. Online. Always.</small></div>
+  </div>
+  <nav class="nav" id="nav" aria-label="Sections">
+    <a href="#overview" data-target="overview" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overview</a>
+    <a href="#console" data-target="console"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9z"/></svg>Payment flow</a>
+    <a href="#network" data-target="network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/></svg>Network</a>
+    <a href="#accounts" data-target="accounts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>Accounts</a>
+    <a href="#ledger" data-target="ledger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Ledger &amp; activity</a>
+    <a href="#security" data-target="security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Security lab</a>
+  </nav>
+  <div class="side-tools">
+    <button type="button" id="apiKeyBtn" title="Set the bridge API key">API key</button>
+  </div>
+  <div class="side-bottom" id="sideStatus">
+    <div class="side-status"><span class="dot pulse"></span><span id="sideStatusText">Connecting…</span></div>
+    <div id="sideStatusSub">Checking backend</div>
+  </div>
+</aside>
+
+<!-- ═════════ Main ═════════ -->
+<main>
+  <div class="topbar">
+    <div class="crumb">UPI Mesh / Dashboard</div>
+    <div class="top-actions">
+      <div class="pill" id="systemPill"><span class="dot pulse"></span><span id="systemText">Connecting…</span></div>
+      <button class="btn primary" id="runDemoBtn" type="button">▷ &nbsp;Run full demo</button>
+    </div>
+  </div>
+
+  <div class="banner" id="offlineBanner" role="alert">Can't reach the backend. Retrying automatically — the numbers below are the last known values.</div>
+
+
+  <div class="notices">
+  <div class="notice" id="howToDemo"><span aria-hidden="true">▷</span><span><b>How to demo:</b> click <b>Run full demo</b> above to watch one payment go end-to-end automatically, or scroll to <b>Payment flow</b> to send one step at a time.</span></div>
+  <div class="notice"><span aria-hidden="true">ⓘ</span><span><b>Demo / simulation mode:</b> no real money moves and no real UPI payment is sent. The mesh is simulated on the server with demo accounts.</span></div>
+  </div>
+
+  <!-- Overview -->
+  <section class="hero" id="overview">
+    <div>
+      <div class="kicker">Offline payment network</div>
+      <h1>UPI, even when the internet isn't.</h1>
+      <p>Encrypted payment packets hop phone-to-phone over Bluetooth until one gets connectivity. Then the backend settles the payment exactly once — no matter how many bridges upload it at the same time.</p>
+      <div class="chips">
+        <span class="chip">AES-256-GCM encrypted</span>
+        <span class="chip">RSA-2048 OAEP key transport</span>
+        <span class="chip">Atomic idempotent settlement</span>
+        <span class="chip">Replay-attack resistant</span>
+        <span class="chip">Tamper-proof (GCM auth tag)</span>
+        <span class="chip">Optimistic + pessimistic locking</span>
+      </div>
+    </div>
+    <div class="keycard">
+      <h3>Server public key</h3>
+      <div class="sub" id="keyAlgo">Loading from /api/server-key…</div>
+      <div class="keyrow"><code id="keyValue">—</code><button class="btn small" type="button" id="copyKeyBtn">Copy</button></div>
+      <ol class="pipeline">
+        <li><i>1</i><span><b>Sender phone</b> wraps a one-time AES key with this RSA key.</span></li>
+        <li><i>2</i><span><b>Relays</b> see only opaque ciphertext and can't alter it undetected.</span></li>
+        <li><i>3</i><span><b>Backend</b> hashes it (SHA-256) so one payment settles once.</span></li>
+      </ol>
+    </div>
+  </section>
+
+
+  <!-- Live stats -->
+  <section class="stats" aria-label="Live statistics">
+    <div class="card stat g"><div class="label">Settled</div><div class="value" id="stSettled">0</div><div class="hint">transactions</div></div>
+    <div class="card stat a"><div class="label">Duplicates dropped</div><div class="value" id="stDupes">0</div><div class="hint">idempotency wins</div></div>
+    <div class="card stat b"><div class="label">Volume settled</div><div class="value" id="stVolume">₹0</div><div class="hint">since last reset</div></div>
+    <div class="card stat"><div class="label">Cache size</div><div class="value" id="stCache">0</div><div class="hint">packet hashes remembered</div></div>
+  </section>
+
+  <!-- Console + network -->
+  <section class="grid2" id="console">
+    <div class="card">
+      <div class="card-head"><div><div class="title">Demo console</div><div class="muted">Drive a payment through the mesh, step by step</div></div></div>
+      <div class="card-body">
+        <button class="btn primary block" id="runDemoBtn2" type="button">▶ &nbsp;Run full demo</button>
+        <div class="stepper" id="stepper" aria-label="Progress">
+          <div class="step" data-step="0"><div class="bubble"></div>Reset</div>
+          <div class="step" data-step="1"><div class="bubble"></div>Inject</div>
+          <div class="step" data-step="2"><div class="bubble"></div>Gossip</div>
+          <div class="step" data-step="3"><div class="bubble"></div>Flush</div>
+        </div>
+
+        <div class="step-box">
+          <h4><span class="stepnum">1</span>Compose payment</h4>
+          <p>Simulates the sender's phone — the payload is encrypted before it enters the mesh.</p>
+          <div class="form" id="composeForm">
+            <div class="field"><label for="sender">Sender</label><select id="sender"></select></div>
+            <div class="field"><label for="receiver">Receiver</label><select id="receiver"></select></div>
+            <div class="field"><label for="amount">Amount (₹)</label><input id="amount" type="number" min="0.01" step="0.01" inputmode="decimal" value="500">
+              <div class="quick" id="quickAmts"><button type="button" data-amt="100">₹100</button><button type="button" data-amt="500">₹500</button><button type="button" data-amt="1000">₹1,000</button><button type="button" data-amt="overdraw" title="More than the sender has">Overdraw</button></div></div>
+            <div class="field"><label for="pin">UPI PIN</label><input id="pin" type="password" inputmode="numeric" maxlength="4" value="1234" autocomplete="off">
+              <div class="help">Demo bank doesn't verify PINs.</div></div>
+            <div class="field"><label for="startDevice">Sender's phone</label><select id="startDevice"></select></div>
+            <div class="field"><label for="ttl">TTL (max hops)</label><input id="ttl" type="number" min="1" max="10" step="1" value="5"></div>
+          </div>
+          <div class="row-btns"><button class="btn primary" id="injectBtn" type="button">Encrypt &amp; inject into mesh</button></div>
+        </div>
+
+        <div class="step-box">
+          <h4><span class="stepnum">2</span>Run gossip round</h4>
+          <p>Packets hop device-to-device; TTL decrements on every hop.</p>
+          <button class="btn block" id="gossipBtn" type="button">Run gossip round</button>
+        </div>
+
+        <div class="step-box">
+          <h4><span class="stepnum">3</span>Bridge walks outside</h4>
+          <p>Any phone with 4G uploads every packet it holds, in parallel. Upload twice to see replay protection.</p>
+          <button class="btn primary block" id="flushBtn" type="button">Bridges upload to backend</button>
+        </div>
+
+        <div class="step-box">
+          <h4><span class="stepnum alt">↺</span>Reset</h4>
+          <p>Clear the mesh and cache, or restore balances, ledger and counters too.</p>
+          <div class="row-btns"><button class="btn" id="meshResetBtn" type="button">Reset mesh</button><button class="btn danger" id="fullResetBtn" type="button">Full reset</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="network">
+      <div class="card">
+        <div class="card-head"><div><div class="title">Network topology</div><div class="muted">Live from the mesh simulator · click a phone to send from it</div></div><div class="pill"><span class="dot pulse"></span>Live</div></div>
+        <div class="card-body">
+          <div class="topo" id="topo" aria-label="Mesh topology"></div>
+          <div class="legend"><span><i></i>Offline (Bluetooth)</span><span><i class="b"></i>Bridge (4G)</span><span><i class="h"></i>Holds a packet</span><span><i class="s"></i>Sender's phone</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="title">Mesh devices</div><div class="muted">Toggle connectivity to change who can bridge</div></div></div>
+        <div class="card-body"><div class="devices" id="devices"><div class="empty">Loading devices…</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Accounts -->
+  <div class="section-title" id="accountsTitle">Accounts</div>
+  <section id="accounts">
+    <div class="accounts" id="accountCards"><div class="card empty">Loading accounts…</div></div>
+  </section>
+
+  <!-- Results + inspector -->
+  <section class="grid2 even" id="results">
+    <div class="card">
+      <div class="card-head"><div><div class="title">Last flush results</div><div class="muted">What the backend decided for each upload</div></div></div>
+      <div class="card-body" id="flushResults"><div class="empty">No flush yet. Inject a packet, run gossip, then flush.</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="title">Packet inspector</div><div class="muted">What a relaying phone actually sees</div></div></div>
+      <div class="card-body" id="inspector"><div class="empty">Inject a packet to inspect it.</div></div>
+    </div>
+  </section>
+
+  <!-- Ledger + activity -->
+  <section class="grid2 wide-left" id="ledger">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="title">Transaction ledger</div><div class="muted" id="ledgerCount">—</div></div>
+        <button class="btn small" type="button" id="csvBtn">Export CSV</button>
+      </div>
+      <div class="card-body">
+        <div class="filters" id="ledgerFilters">
+          <button type="button" data-f="ALL" class="on">All</button>
+          <button type="button" data-f="SETTLED">Settled</button>
+          <button type="button" data-f="REJECTED">Rejected</button>
+          <input id="ledgerSearch" type="search" placeholder="Search account…" aria-label="Search ledger">
+        </div>
+        <div class="scroll-x" id="ledgerBox"><div class="empty">No transactions yet. Inject a packet and run a flush.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="title">Activity log</div><div class="muted">Real backend events, newest first</div></div></div>
+      <div class="events" id="events"><div class="empty">Waiting for activity…</div></div>
+    </div>
+  </section>
+
+  <!-- Security lab + audit -->
+  <section class="grid2 even" id="security">
+    <div class="card">
+      <div class="card-head"><div><div class="title">Security lab</div><div class="muted">Attack the system and watch it hold — uses the sender, receiver and amount above</div></div></div>
+      <div class="lab">
+        <div class="lab-item">
+          <h4>Tamper with a packet</h4>
+          <p>A malicious relay flips one character of the ciphertext. The AES-GCM auth tag must reject it.</p>
+          <button class="btn small" type="button" id="labTamper">Run tamper attack</button>
+          <div class="out" id="outTamper"></div>
+        </div>
+        <div class="lab-item">
+          <h4>Replay an uploaded packet</h4>
+          <p>The bridge uploads the same packet again. The idempotency gate must drop it.</p>
+          <button class="btn small" type="button" id="labReplay">Re-upload from bridges</button>
+          <div class="out" id="outReplay"></div>
+        </div>
+        <div class="lab-item">
+          <h4>Race: many bridges, one payment</h4>
+          <p>The same packet hits the backend through several bridges at the same instant. Exactly one may settle.</p>
+          <div class="row-btns"><button class="btn small" type="button" id="labRace">Race</button>
+            <select id="raceN" aria-label="Number of bridges"><option>2</option><option selected>3</option><option>5</option><option>8</option></select><span class="muted">bridges</span></div>
+          <div class="out" id="outRace"></div>
+        </div>
+        <div class="lab-item">
+          <h4>Overdraft</h4>
+          <p>Send more than the sender has. The payment must be recorded as REJECTED and balances untouched.</p>
+          <button class="btn small" type="button" id="labOverdraw">Try to overdraw</button>
+          <div class="out" id="outOverdraw"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><div class="title">Audit summary</div><div class="muted">All ingest attempts, from <code class="k">/api/audit</code></div></div><button class="btn small" type="button" id="auditRefresh">↻ Refresh</button></div>
+      <div class="audit-grid">
+        <div class="stat"><div class="label">Settled</div><div class="value" id="auSettled">0</div></div>
+        <div class="stat"><div class="label">Rejected</div><div class="value" id="auRejected">0</div></div>
+        <div class="stat"><div class="label">Invalid</div><div class="value" id="auInvalid">0</div></div>
+        <div class="stat"><div class="label">Idempotency cache</div><div class="value" id="auCache">0</div></div>
+      </div>
+      <div class="foot">Invalid = tampered, stale or undecryptable packets (not written to the ledger). Auto-refreshes every 4 s.</div>
+    </div>
+  </section>
+</main>
+</div>
+
+<!-- Receipt modal -->
+<div class="modal" id="receiptModal" role="dialog" aria-modal="true" aria-labelledby="rAmount">
+  <div class="modal-box">
+    <div class="modal-head"><div><div class="kicker">Demo receipt</div><h2 id="rAmount">₹0</h2><span id="rStatus"></span></div><button class="btn small" type="button" data-close="receiptModal">Close</button></div>
+    <ul class="timeline" id="rTimeline"></ul>
+    <dl class="kv" id="rRows"></dl>
+  </div>
+</div>
+
+<!-- API key modal -->
+<div class="modal" id="keyModal" role="dialog" aria-modal="true" aria-labelledby="keyTitle">
+  <div class="modal-box">
+    <div class="kicker">Authorization</div>
+    <h2 id="keyTitle">Bridge API key</h2>
+    <p class="muted" id="keyMsg">Needed for Full reset. Kept only for this browser tab.</p>
+    <div class="field"><label for="apiKeyInput">API key</label><input id="apiKeyInput" type="password" autocomplete="off" placeholder="Value of BRIDGE_API_KEY (local dev default: demo-key)"></div>
+    <div class="row-btns" style="margin-top:20px;justify-content:flex-end"><button class="btn" type="button" id="keyCancel">Cancel</button><button class="btn primary" type="button" id="keySave">Save key</button></div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<script src="/app.js?v=7" defer></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: upi-mesh
+    env: java
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar target/upi-offline-mesh-1.0.0.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: railway
+      - key: BRIDGE_API_KEY
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        value: https://upi-mesh.onrender.com
