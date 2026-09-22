@@ -4,12 +4,8 @@ Send money with no internet. Encrypted payment packets hop device-to-device over
 
 ## Stack
 
-Java 17 · Spring Boot 3.3 · PostgreSQL · RSA-2048 + AES-256-GCM · JUnit 5
+Java 17 · Spring Boot 3.3.5 · PostgreSQL · H2 (local dev) · RSA-2048 + AES-256-GCM · JUnit 5
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 ## Run locally
 
 ```bash
@@ -18,7 +14,6 @@ mvn spring-boot:run
 
 Opens at `http://localhost:8080` — uses H2 in-memory DB, no setup needed.
 
-<<<<<<< HEAD
 ## Dashboard
 
 The UI at `/` is a thin client over the REST API — every account, device, balance, counter and result on screen comes from the backend (nothing is hardcoded).
@@ -36,12 +31,10 @@ The UI at `/` is a thin client over the REST API — every account, device, bala
 | Full reset | Restores balances, clears ledger + counters (asks for the API key) | `POST /api/demo/reset-full` |
 
 The API key is never embedded in the page: click **API key** in the sidebar (or trigger Full reset) and enter the value of `BRIDGE_API_KEY` — it is kept in `sessionStorage` for that tab only. Local-dev default is `demo-key`.
-=======
->>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 
 ## How it works
 
-```
+```text
 Sender (offline)
   → encrypts PaymentInstruction with RSA-OAEP + AES-256-GCM
   → wraps in MeshPacket with TTL
@@ -66,7 +59,7 @@ Backend:
 |---|---|
 | 1 | `ConcurrentHashMap.putIfAbsent` — in-memory, microseconds |
 | 2 | `PESSIMISTIC_WRITE` DB lock on both accounts |
-| 3 | `@Version` optimistic lock on Account entity |
+| 3 | `@Version` optimistic lock on `Account` entity |
 | 4 | `UNIQUE INDEX` on `transactions.packet_hash` |
 
 ## API
@@ -78,7 +71,6 @@ Backend:
 | GET | `/api/accounts` | — |
 | GET | `/api/transactions` | — |
 | GET | `/api/audit` | — |
-<<<<<<< HEAD
 | GET | `/api/events?limit=50` | — |
 | GET | `/api/health` | — |
 | POST | `/api/demo/send` | — |
@@ -92,28 +84,15 @@ Backend:
 | POST | `/api/mesh/devices/{id}/internet` | — |
 | GET | `/api/mesh/state` | — |
 
-`/api/audit` returns `summary` (`totalSettled`, `totalRejected`, `totalInvalid`, `duplicatesDropped`, `volumeSettled`, `idempotencyCacheSize`) plus `recentTransactions`. Invalid and duplicate packets are counted in memory rather than written to the ledger. `POST /api/demo/reset-full` now also clears the ledger and counters so they always agree with the restored balances.
+`/api/audit` returns `summary` (`totalSettled`, `totalRejected`, `totalInvalid`, `duplicatesDropped`, `volumeSettled`, `idempotencyCacheSize`) plus `recentTransactions`. Invalid and duplicate packets are counted in memory rather than written to the ledger. `POST /api/demo/reset-full` also clears the ledger and counters so they always agree with the restored balances.
 
-=======
-| POST | `/api/demo/send` | — |
-| POST | `/api/demo/run-full` | — |
-| POST | `/api/demo/reset-full` | Bearer token |
-| POST | `/api/mesh/gossip` | — |
-| POST | `/api/mesh/flush` | — |
-| GET | `/api/mesh/state` | — |
-
->>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 ## Tests
 
 ```bash
 mvn test
 ```
 
-<<<<<<< HEAD
 Unit tests cover: exactly-once concurrency (3-thread), tamper detection, encrypt/decrypt roundtrip, insufficient funds, idempotency hash stability, distinct payment nonces. `ApiControllerIntegrationTest` (MockMvc) covers every REST endpoint, including the events feed, device toggle, tamper and concurrent-upload demos.
-=======
-6 tests covering: exactly-once concurrency (3-thread), tamper detection, encrypt/decrypt roundtrip, insufficient funds, idempotency hash stability, distinct payment nonces.
->>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 
 ## Deploy (Render)
 
