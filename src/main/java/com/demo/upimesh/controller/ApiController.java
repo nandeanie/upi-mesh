@@ -1,6 +1,9 @@
 package com.demo.upimesh.controller;
 
+<<<<<<< HEAD
 import com.demo.upimesh.crypto.HybridCryptoService;
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 import com.demo.upimesh.crypto.ServerKeyHolder;
 import com.demo.upimesh.model.*;
 import com.demo.upimesh.service.*;
@@ -14,27 +17,37 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.*;
+<<<<<<< HEAD
 import java.util.concurrent.*;
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 
 @RestController
 @RequestMapping("/api")
 public class ApiController {
 
+<<<<<<< HEAD
     private static final int DEFAULT_TTL = 5;
     private static final int MAX_TTL     = 10;
 
     @Autowired private ServerKeyHolder        serverKey;
     @Autowired private HybridCryptoService    crypto;
+=======
+    @Autowired private ServerKeyHolder        serverKey;
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     @Autowired private DemoService            demo;
     @Autowired private MeshSimulatorService   mesh;
     @Autowired private BridgeIngestionService bridge;
     @Autowired private AccountRepository      accountRepo;
     @Autowired private TransactionRepository  txRepo;
     @Autowired private IdempotencyService     idempotency;
+<<<<<<< HEAD
     @Autowired private MetricsService         metrics;
     @Autowired private EventLogService        eventLog;
 
     // ── Server key ───────────────────────────────────────────────────────────
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 
     @GetMapping("/server-key")
     public Map<String, String> getServerPublicKey() {
@@ -45,6 +58,7 @@ public class ApiController {
         );
     }
 
+<<<<<<< HEAD
     // ── Demo: step-by-step flow (inject → gossip → flush) ────────────────────
 
     @PostMapping("/demo/send")
@@ -65,11 +79,24 @@ public class ApiController {
                 "packetId",          packet.getPacketId(),
                 "ciphertextPreview", packet.getCiphertext().substring(0, 64) + "...",
                 "ciphertextLength",  packet.getCiphertext().length(),
+=======
+    @PostMapping("/demo/send")
+    public ResponseEntity<?> demoSend(@Valid @RequestBody DemoSendRequest req) throws Exception {
+        MeshPacket packet = demo.createPacket(
+                req.senderVpa, req.receiverVpa, req.amount, req.pin,
+                req.ttl == null ? 5 : req.ttl);
+        String startDevice = req.startDevice == null ? "phone-alice" : req.startDevice;
+        mesh.inject(startDevice, packet);
+        return ResponseEntity.ok(Map.of(
+                "packetId",          packet.getPacketId(),
+                "ciphertextPreview", packet.getCiphertext().substring(0, 64) + "...",
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
                 "ttl",               packet.getTtl(),
                 "injectedAt",        startDevice
         ));
     }
 
+<<<<<<< HEAD
     @PostMapping("/mesh/gossip")
     public Map<String, Object> meshGossip() {
         MeshSimulatorService.GossipResult r = mesh.gossipOnce();
@@ -100,6 +127,54 @@ public class ApiController {
         eventLog.record("DEVICE", deviceId + (req.enabled ? " gained 4G and can now act as a bridge"
                                                           : " went offline (Bluetooth only)"));
         return Map.of("deviceId", d.getDeviceId(), "hasInternet", d.hasInternet());
+=======
+    @PostMapping("/demo/run-full")
+    public ResponseEntity<?> runFullDemo(@Valid @RequestBody DemoSendRequest req) throws Exception {
+        mesh.resetMesh();
+        idempotency.clear();
+
+        MeshPacket packet = demo.createPacket(
+                req.senderVpa, req.receiverVpa, req.amount, req.pin,
+                req.ttl == null ? 5 : req.ttl);
+        String startDevice = req.startDevice == null ? "phone-alice" : req.startDevice;
+        mesh.inject(startDevice, packet);
+
+        MeshSimulatorService.GossipResult g1 = mesh.gossipOnce();
+        MeshSimulatorService.GossipResult g2 = mesh.gossipOnce();
+
+        List<MeshSimulatorService.BridgeUpload> uploads = mesh.collectBridgeUploads();
+        List<Map<String, Object>> flushResults = new ArrayList<>();
+        uploads.parallelStream().forEach(up -> {
+            BridgeIngestionService.IngestResult r =
+                    bridge.ingest(up.packet(), up.bridgeNodeId(), 5 - up.packet().getTtl());
+            synchronized (flushResults) {
+                flushResults.add(Map.of(
+                        "bridgeNode",    up.bridgeNodeId(),
+                        "packetId",      up.packet().getPacketId().substring(0, 8),
+                        "outcome",       r.outcome(),
+                        "reason",        r.reason() == null ? "" : r.reason(),
+                        "transactionId", r.transactionId() == null ? -1 : r.transactionId()
+                ));
+            }
+        });
+
+        return ResponseEntity.ok(Map.of(
+                "packetId",        packet.getPacketId(),
+                "gossipRound1",    g1.transfers(),
+                "gossipRound2",    g2.transfers(),
+                "meshAfterGossip", g2.deviceCounts(),
+                "flushAttempted",  uploads.size(),
+                "flushResults",    flushResults
+        ));
+    }
+
+    @PostMapping("/demo/reset-full")
+    public Map<String, Object> resetFull() {
+        mesh.resetMesh();
+        idempotency.clear();
+        demo.resetBalances();
+        return Map.of("status", "full reset complete");
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     }
 
     @GetMapping("/mesh/state")
@@ -111,6 +186,7 @@ public class ApiController {
                     "hasInternet", d.hasInternet(),
                     "packetCount", d.packetCount(),
                     "packetIds",   d.getHeldPackets().stream()
+<<<<<<< HEAD
                             .map(p -> shortId(p.getPacketId())).toList()
             ));
         }
@@ -254,6 +330,48 @@ public class ApiController {
 
     // ── Bridge ingest (real bridge phones call this) ─────────────────────────
 
+=======
+                            .map(p -> p.getPacketId().substring(0, 8)).toList()
+            ));
+        }
+        deviceData.sort(Comparator.comparing(m -> (Boolean) m.get("hasInternet")));
+        return Map.of("devices", deviceData, "idempotencyCacheSize", idempotency.size());
+    }
+
+    @PostMapping("/mesh/gossip")
+    public Map<String, Object> meshGossip() {
+        MeshSimulatorService.GossipResult r = mesh.gossipOnce();
+        return Map.of("transfers", r.transfers(), "deviceCounts", r.deviceCounts());
+    }
+
+    @PostMapping("/mesh/flush")
+    public Map<String, Object> meshFlush() {
+        List<MeshSimulatorService.BridgeUpload> uploads = mesh.collectBridgeUploads();
+        List<Map<String, Object>> results = new ArrayList<>();
+        uploads.parallelStream().forEach(up -> {
+            BridgeIngestionService.IngestResult r =
+                    bridge.ingest(up.packet(), up.bridgeNodeId(), 5 - up.packet().getTtl());
+            synchronized (results) {
+                results.add(Map.of(
+                        "bridgeNode",    up.bridgeNodeId(),
+                        "packetId",      up.packet().getPacketId().substring(0, 8),
+                        "outcome",       r.outcome(),
+                        "reason",        r.reason() == null ? "" : r.reason(),
+                        "transactionId", r.transactionId() == null ? -1 : r.transactionId()
+                ));
+            }
+        });
+        return Map.of("uploadsAttempted", uploads.size(), "results", results);
+    }
+
+    @PostMapping("/mesh/reset")
+    public Map<String, Object> meshReset() {
+        mesh.resetMesh();
+        idempotency.clear();
+        return Map.of("status", "mesh and cache cleared");
+    }
+
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     @PostMapping("/bridge/ingest")
     public ResponseEntity<?> ingest(
             @Valid @RequestBody MeshPacket packet,
@@ -262,6 +380,7 @@ public class ApiController {
         return ResponseEntity.ok(bridge.ingest(packet, bridgeNodeId, hopCount));
     }
 
+<<<<<<< HEAD
     // ── Read APIs ────────────────────────────────────────────────────────────
 
     @GetMapping("/accounts")
@@ -270,10 +389,15 @@ public class ApiController {
                 .sorted(Comparator.comparing(Account::getVpa))
                 .toList();
     }
+=======
+    @GetMapping("/accounts")
+    public List<Account> listAccounts() { return accountRepo.findAll(); }
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 
     @GetMapping("/transactions")
     public List<Transaction> listTransactions() { return txRepo.findTop50ByOrderByIdDesc(); }
 
+<<<<<<< HEAD
     @GetMapping("/events")
     public List<EventLogService.Event> events(@RequestParam(defaultValue = "50") int limit) {
         return eventLog.recent(Math.max(1, Math.min(limit, 200)));
@@ -297,6 +421,20 @@ public class ApiController {
         out.put("summary",            summary);
         out.put("recentTransactions", all);
         return out;
+=======
+    @GetMapping("/audit")
+    public Map<String, Object> auditLog() {
+        List<Transaction> all = txRepo.findTop50ByOrderByIdDesc();
+        return Map.of(
+                "summary", Map.of(
+                        "totalSettled",         txRepo.countByStatus(Transaction.Status.SETTLED),
+                        "totalRejected",        txRepo.countByStatus(Transaction.Status.REJECTED),
+                        "totalInvalid",         txRepo.countByStatus(Transaction.Status.INVALID),
+                        "idempotencyCacheSize", idempotency.size()
+                ),
+                "recentTransactions", all
+        );
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     }
 
     @GetMapping("/health")
@@ -305,6 +443,7 @@ public class ApiController {
                       "timestamp", java.time.Instant.now().toString());
     }
 
+<<<<<<< HEAD
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /** Upload every packet held by an online device, in parallel, exactly like real bridges would. */
@@ -366,6 +505,8 @@ public class ApiController {
 
     // ── Request bodies ───────────────────────────────────────────────────────
 
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     public static class DemoSendRequest {
         @NotBlank  public String     senderVpa;
         @NotBlank  public String     receiverVpa;
@@ -374,10 +515,13 @@ public class ApiController {
         @NotBlank  public String     pin;
                    public Integer    ttl;
                    public String     startDevice;
+<<<<<<< HEAD
                    public Integer    bridges;      // only used by /demo/concurrent-upload
     }
 
     public static class InternetRequest {
         @NotNull public Boolean enabled;
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     }
 }

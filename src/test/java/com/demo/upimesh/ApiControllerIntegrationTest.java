@@ -29,7 +29,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   10. POST /api/demo/send          — validation: missing required fields
  *   11. GET  /api/mesh/state         — mesh state structure
  *   12. POST /api/demo/send          — full send returns packetId
+<<<<<<< HEAD
  *   13-18. events feed, audit counters, device toggle, tamper, concurrent upload, self-payment
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -224,6 +227,7 @@ class ApiControllerIntegrationTest {
                 .andExpect(jsonPath("$.ciphertextPreview").exists())
                 .andExpect(jsonPath("$.ttl").value(5));
     }
+<<<<<<< HEAD
 
     // ── 13. Events feed ───────────────────────────────────────────────────────
 
@@ -318,4 +322,6 @@ class ApiControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").exists());
     }
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 }

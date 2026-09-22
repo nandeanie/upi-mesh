@@ -6,7 +6,10 @@ import com.demo.upimesh.model.Account;
 import com.demo.upimesh.model.AccountRepository;
 import com.demo.upimesh.model.MeshPacket;
 import com.demo.upimesh.model.PaymentInstruction;
+<<<<<<< HEAD
 import com.demo.upimesh.model.TransactionRepository;
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +27,10 @@ public class DemoService {
     private static final Logger log = LoggerFactory.getLogger(DemoService.class);
 
     @Autowired private AccountRepository  accounts;
+<<<<<<< HEAD
     @Autowired private TransactionRepository transactions;
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     @Autowired private HybridCryptoService crypto;
     @Autowired private ServerKeyHolder     serverKey;
 
@@ -74,10 +80,13 @@ public class DemoService {
         });
         log.info("Demo balances reset");
     }
+<<<<<<< HEAD
 
     /** Wipes the demo ledger so it always agrees with the restored balances. */
     public void resetLedger() {
         transactions.deleteAll();
         log.info("Demo ledger cleared");
     }
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 }

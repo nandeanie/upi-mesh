@@ -26,9 +26,12 @@ public class MeshSimulatorService {
 
     private final Map<String, VirtualDevice> devices = new ConcurrentHashMap<>();
 
+<<<<<<< HEAD
     /** TTL each packet was injected with, so hop count = initialTtl - currentTtl (no hardcoded 5). */
     private final Map<String, Integer> initialTtl = new ConcurrentHashMap<>();
 
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     public MeshSimulatorService() {
         seedDefaultDevices();
     }
@@ -48,7 +51,10 @@ public class MeshSimulatorService {
     public void inject(String senderDeviceId, MeshPacket packet) {
         VirtualDevice sender = devices.get(senderDeviceId);
         if (sender == null) throw new IllegalArgumentException("Unknown device: " + senderDeviceId);
+<<<<<<< HEAD
         initialTtl.putIfAbsent(packet.getPacketId(), packet.getTtl());
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
         sender.hold(packet);
         log.info("Packet {} injected at {} (TTL={})",
                 packet.getPacketId().substring(0, 8), senderDeviceId, packet.getTtl());
@@ -105,6 +111,7 @@ public class MeshSimulatorService {
         return uploads;
     }
 
+<<<<<<< HEAD
     /** How many hops this copy of the packet has travelled since it was injected. */
     public int hopCount(MeshPacket packet) {
         Integer start = initialTtl.get(packet.getPacketId());
@@ -120,6 +127,8 @@ public class MeshSimulatorService {
         return d;
     }
 
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     /** Per-device packet count snapshot — for dashboard display. */
     public Map<String, Integer> snapshotMap() {
         Map<String, Integer> m = new LinkedHashMap<>();
@@ -131,7 +140,10 @@ public class MeshSimulatorService {
 
     public void resetMesh() {
         devices.values().forEach(VirtualDevice::clear);
+<<<<<<< HEAD
         initialTtl.clear();
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
         log.info("Mesh simulator reset");
     }
 

@@ -33,8 +33,11 @@ public class BridgeIngestionService {
     @Autowired private HybridCryptoService  crypto;
     @Autowired private IdempotencyService   idempotency;
     @Autowired private SettlementService    settlement;
+<<<<<<< HEAD
     @Autowired private MetricsService       metrics;
     @Autowired private EventLogService      events;
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
 
     @Value("${upi.mesh.packet-max-age-seconds:86400}")
     private long maxAgeSeconds;
@@ -50,9 +53,12 @@ public class BridgeIngestionService {
             // ── 2. Idempotency gate ──────────────────────────────────────────
             if (!idempotency.claim(packetHash)) {
                 audit(packetHash, "DUPLICATE_DROPPED", bridgeNodeId, hopCount, start, null);
+<<<<<<< HEAD
                 metrics.duplicateDropped();
                 events.record("DUPLICATE", "Duplicate of packet " + shortHash(packetHash)
                         + " from " + bridgeNodeId + " dropped by the idempotency gate");
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
                 return IngestResult.duplicate(packetHash);
             }
 
@@ -63,9 +69,12 @@ public class BridgeIngestionService {
             } catch (Exception e) {
                 audit(packetHash, "INVALID:decryption_failed", bridgeNodeId, hopCount, start,
                         e.getClass().getSimpleName());
+<<<<<<< HEAD
                 metrics.invalidPacket();
                 events.record("INVALID", "Packet " + shortHash(packetHash) + " from " + bridgeNodeId
                         + " failed decryption / authentication (" + e.getClass().getSimpleName() + ")");
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
                 return IngestResult.invalid(packetHash, "decryption_failed");
             }
 
@@ -74,16 +83,22 @@ public class BridgeIngestionService {
             if (ageSeconds > maxAgeSeconds) {
                 audit(packetHash, "INVALID:stale_packet", bridgeNodeId, hopCount, start,
                         "age=" + ageSeconds + "s");
+<<<<<<< HEAD
                 metrics.invalidPacket();
                 events.record("INVALID", "Packet " + shortHash(packetHash) + " rejected as stale (age "
                         + ageSeconds + "s)");
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
                 return IngestResult.invalid(packetHash, "stale_packet (age=" + ageSeconds + "s)");
             }
             if (ageSeconds < -300) {   // 5-minute clock-skew tolerance
                 audit(packetHash, "INVALID:future_dated", bridgeNodeId, hopCount, start,
                         "skew=" + (-ageSeconds) + "s");
+<<<<<<< HEAD
                 metrics.invalidPacket();
                 events.record("INVALID", "Packet " + shortHash(packetHash) + " rejected as future-dated");
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
                 return IngestResult.invalid(packetHash, "future_dated");
             }
 
@@ -91,19 +106,26 @@ public class BridgeIngestionService {
             Transaction tx = settlement.settle(instruction, packetHash, bridgeNodeId, hopCount);
             String outcome = tx.getStatus().name();
             audit(packetHash, outcome, bridgeNodeId, hopCount, start, null);
+<<<<<<< HEAD
             events.record(outcome, describeSettlement(tx, bridgeNodeId, hopCount));
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
             return IngestResult.of(outcome, packetHash, tx);
 
         } catch (Exception e) {
             log.error("Ingestion pipeline error bridge={} hash={}: {}",
                     bridgeNodeId, packetHash, e.getMessage(), e);
+<<<<<<< HEAD
             metrics.invalidPacket();
             events.record("INVALID", "Packet " + shortHash(packetHash) + " from " + bridgeNodeId
                     + " hit an internal error: " + e.getMessage());
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
             return IngestResult.invalid(packetHash, "internal_error");
         }
     }
 
+<<<<<<< HEAD
     private static String shortHash(String hash) {
         return hash.length() > 8 ? hash.substring(0, 8) : hash;
     }
@@ -120,6 +142,8 @@ public class BridgeIngestionService {
                 + " (" + tx.getRejectionReason() + ")";
     }
 
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     private void audit(String hash, String outcome, String bridge, int hops,
                        Instant start, String detail) {
         long ms = Duration.between(start, Instant.now()).toMillis();

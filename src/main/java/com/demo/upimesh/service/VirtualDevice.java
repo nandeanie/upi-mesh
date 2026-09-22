@@ -15,7 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VirtualDevice {
 
     private final String  deviceId;
+<<<<<<< HEAD
     private volatile boolean hasInternet;
+=======
+    private final boolean hasInternet;
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     private final Map<String, MeshPacket> heldPackets = new ConcurrentHashMap<>();
 
     public VirtualDevice(String deviceId, boolean hasInternet) {
@@ -26,9 +30,12 @@ public class VirtualDevice {
     public String  getDeviceId()   { return deviceId; }
     public boolean hasInternet()   { return hasInternet; }
 
+<<<<<<< HEAD
     /** Simulates the phone gaining or losing 4G/Wi-Fi (i.e. becoming / ceasing to be a bridge). */
     public void setInternet(boolean enabled) { this.hasInternet = enabled; }
 
+=======
+>>>>>>> 1252be4f882ee6f81234b00d40dc47dd23416d88
     public void hold(MeshPacket packet) {
         heldPackets.putIfAbsent(packet.getPacketId(), packet);
     }
